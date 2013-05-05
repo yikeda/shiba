@@ -4,22 +4,26 @@ using System.Collections;
 
 public class camera : MonoBehaviour {
     const int GridSize = 16;
+    const int BufferSize = 3;
 
+    bool isInitialized;
 	WebCamDevice[] devices;
 	WebCamTexture webcamTexture;
 	Texture2D smallTexture;
 	Color32[] basePixels;
 	Color32[] displayPixels;
 	int[] grayscalePixels;
-	int[] grayscalePixelsPrev;
 	int[] grayscalePixelsCount;
-    bool isInitialized;
+    int[,] pixelsBuffer;
+    int bufferIndex;
+	int[] diffPixels;
 
 	void Start () {
         isInitialized = false;
 		devices  = WebCamTexture.devices;
-		if (devices.Length > 1) {
-			webcamTexture  = new WebCamTexture(devices[1].name, 128, 128, 60);
+		if (devices.Length > 0) {
+            int cameraIndex = devices.Length - 1;
+			webcamTexture  = new WebCamTexture(devices[cameraIndex].name, 128, 128, 60);
 			webcamTexture.Play();
 		} else {
 		}
@@ -39,8 +43,9 @@ public class camera : MonoBehaviour {
             basePixels = new Color32[webcamTexture.width * webcamTexture.height];
             displayPixels = new Color32[GridSize * GridSize];
             grayscalePixels = new int[GridSize * GridSize];
-            grayscalePixelsPrev = new int[GridSize * GridSize];
             grayscalePixelsCount = new int[GridSize * GridSize];
+            pixelsBuffer = new int[BufferSize,GridSize * GridSize];
+            diffPixels = new int[GridSize * GridSize];
 
             plane1.renderer.material.mainTexture = smallTexture;
             plane1.renderer.material.mainTexture.filterMode = FilterMode.Point;
@@ -67,7 +72,6 @@ public class camera : MonoBehaviour {
             return;
 
         webcamTexture.GetPixels32(basePixels);
-		grayscalePixels.CopyTo(grayscalePixelsPrev, 0);
 
 		for (int x = 0; x < GridSize; x++) {
 			for (int y = 0; y < GridSize; y++) {
@@ -89,16 +93,39 @@ public class camera : MonoBehaviour {
 			}
 		}
 
+        for (int x = 0; x < GridSize; x++) {
+			for (int y = 0; y < GridSize; y++) {
+                int index = x + GridSize * y;
+                pixelsBuffer[bufferIndex,index] = grayscalePixels[index] / grayscalePixelsCount[index];
+            }
+        }
+
+
+        for (int x = 0; x < GridSize; x++) {
+			for (int y = 0; y < GridSize; y++) {
+                int index = x + GridSize * y;
+
+                int diff = 0;
+                for (int i = 0; i < BufferSize - 1; i++) {
+                    diff += Math.Abs(pixelsBuffer[bufferIndex,index] - pixelsBuffer[(bufferIndex + i) % BufferSize, index]);
+                }
+                diffPixels[index] = diff;
+            }
+        }
+
 		for (int x = 0; x < GridSize; x++) {
 			for (int y = 0; y < GridSize; y++) {
 				int index = x + GridSize * y;
-				byte gray = (byte)(grayscalePixels[index] / grayscalePixelsCount[index]);
+				//byte gray = (byte)(pixelsBuffer[bufferIndex,index]);
+                byte gray = (byte)(diffPixels[index]);
 				displayPixels[index].r = gray;
 				displayPixels[index].g = gray;
 				displayPixels[index].b = gray;
 				displayPixels[index].a = (byte)1;
 			}
 		}
+
+        bufferIndex = ++bufferIndex % BufferSize;
 
 		smallTexture.SetPixels32(displayPixels);
 		smallTexture.Apply();
