@@ -22,7 +22,7 @@ function Start()
 
     		texture = new Texture2D(webcamTexture.width, webcamTexture.height, TextureFormat.RGB565, false);
 
-    		cubeObject.renderer.material.SetTexture("_MainTex", texture);
+    		cubeObject.GetComponent.<Renderer>().material.SetTexture("_MainTex", texture);
 
     		initDone = true;
 

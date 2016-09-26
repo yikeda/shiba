@@ -47,11 +47,11 @@ public class camera : MonoBehaviour {
             pixelsBuffer = new int[BufferSize,GridSize * GridSize];
             diffPixels = new int[GridSize * GridSize];
 
-            plane1.renderer.material.mainTexture = smallTexture;
-            plane1.renderer.material.mainTexture.filterMode = FilterMode.Point;
-            plane1.renderer.material.shader = Shader.Find("Unlit/Texture");
+            plane1.GetComponent<Renderer>().material.mainTexture = smallTexture;
+            plane1.GetComponent<Renderer>().material.mainTexture.filterMode = FilterMode.Point;
+            plane1.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Texture");
 
-            plane2.renderer.material.mainTexture = webcamTexture;
+            plane2.GetComponent<Renderer>().material.mainTexture = webcamTexture;
             //plane2.renderer.material.mainTexture.filterMode = FilterMode.Point;
             //plane2.renderer.material.shader = Shader.Find("Unlit/Texture");
 
